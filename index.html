@@ -1,0 +1,463 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CatBot AI</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;background:#0b1020;color:#f5f7ff;
+  font-family:Inter,Arial,sans-serif;
+}
+.app{display:flex;height:100vh;min-height:550px}
+.sidebar{
+  width:270px;background:#10172b;padding:20px;
+  border-right:1px solid #26314b;display:flex;
+  flex-direction:column;gap:15px;
+}
+.logo{font-size:25px;font-weight:800;color:#8b9cff}
+.logo span{color:#fff}
+button,select,input,textarea{font:inherit}
+button{cursor:pointer}
+.newchat,.send{
+  border:0;border-radius:12px;padding:12px;
+  background:#6578ff;color:white;font-weight:700;
+}
+.newchat:hover,.send:hover{background:#8291ff}
+.setting{
+  background:#18223a;padding:13px;border-radius:13px;
+}
+.setting label{
+  display:block;font-size:12px;color:#aeb9d4;
+  margin-bottom:8px;
+}
+input,select{
+  width:100%;padding:11px;border:1px solid #354363;
+  background:#0d1528;color:white;border-radius:9px;
+  outline:none;
+}
+select{cursor:pointer}
+.keyrow{display:flex;gap:6px}
+.keyrow input{min-width:0}
+.keyrow button{
+  border:1px solid #354363;background:#263451;
+  color:white;border-radius:9px;padding:0 10px;
+}
+.small{
+  color:#91a0bd;font-size:11px;line-height:1.5;
+}
+.status{font-size:12px;color:#aeb9d4}
+.dot{
+  display:inline-block;width:8px;height:8px;
+  background:#eab308;border-radius:50%;margin-right:6px;
+}
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{
+  height:65px;padding:0 22px;border-bottom:1px solid #26314b;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.topbar strong{font-size:17px}
+.modeltag{font-size:11px;color:#aeb9d4}
+.messages{
+  flex:1;overflow-y:auto;padding:25px;
+  width:100%;max-width:900px;margin:auto;
+}
+.welcome{text-align:center;padding:65px 15px 25px}
+.welcome h1{font-size:35px;margin-bottom:10px}
+.welcome p{color:#aeb9d4}
+.suggestions{
+  display:flex;gap:10px;flex-wrap:wrap;
+  justify-content:center;margin-top:25px;
+}
+.suggestions button{
+  background:#17223a;color:#dce3ff;
+  border:1px solid #344261;border-radius:20px;
+  padding:10px 15px;
+}
+.msg{display:flex;gap:12px;margin:20px 0;align-items:flex-start}
+.avatar{
+  width:34px;height:34px;flex-shrink:0;border-radius:50%;
+  display:grid;place-items:center;background:#29395d;
+}
+.msgbody{
+  background:#151f35;border:1px solid #273653;
+  border-radius:13px;padding:14px;line-height:1.65;
+  white-space:pre-wrap;overflow-wrap:anywhere;max-width:100%;
+}
+.user .msgbody{background:#26365c}
+.msgbody pre{
+  background:#080e1c;padding:12px;border-radius:9px;
+  overflow-x:auto;white-space:pre;
+}
+.msgbody code{color:#aabaff}
+.msgbody .copy{
+  display:block;margin-top:9px;background:#263451;
+  border:0;color:#dce3ff;padding:6px 10px;
+  border-radius:7px;font-size:11px;
+}
+.typing{color:#aeb9d4;padding:10px}
+.composer{
+  padding:15px 20px 20px;border-top:1px solid #26314b;
+  width:100%;max-width:900px;margin:auto;
+}
+.inputbox{
+  display:flex;gap:10px;background:#151f35;
+  padding:10px;border:1px solid #344261;border-radius:15px;
+}
+textarea{
+  flex:1;resize:none;max-height:140px;min-height:42px;
+  background:transparent;border:0;color:white;
+  outline:none;padding:10px;
+}
+.send{align-self:flex-end}
+.footer{text-align:center;font-size:11px;color:#8592ad;margin-top:10px}
+.hidden{display:none!important}
+@media(max-width:650px){
+ .sidebar{width:210px;padding:12px}
+ .messages{padding:12px}
+ .welcome h1{font-size:26px}
+ .topbar{padding:0 12px}
+ .composer{padding:10px}
+}
+@media(max-width:480px){
+ .app{height:auto;min-height:100vh;flex-direction:column}
+ .sidebar{width:100%;border-right:0;border-bottom:1px solid #26314b}
+ .sidebar .setting{padding:9px}
+ .sidebar .logo{font-size:20px}
+ .sidebar .newchat{padding:9px}
+ .main{min-height:65vh}
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<aside class="sidebar">
+  <div class="logo">🤖 CatBot <span>AI</span></div>
+
+  <button class="newchat" id="newChat">＋ New Chat</button>
+
+  <div class="setting">
+    <label>GROQ API KEY</label>
+    <div class="keyrow">
+      <input id="apiKey" type="password"
+        placeholder="gsk_..." autocomplete="off">
+      <button id="toggleKey" type="button">Show</button>
+    </div>
+    <p class="small">
+      Key is kept in page memory only. It is not saved
+      in localStorage or included in this source code.
+    </p>
+    <div class="status" id="keyStatus">
+      <span class="dot"></span> API key not entered
+    </div>
+  </div>
+
+  <div class="setting">
+    <label>MODEL FAMILY</label>
+    <select id="family">
+      <option value="gpt">GPT-OSS Models</option>
+      <option value="llama">Llama Models</option>
+    </select>
+  </div>
+
+  <div class="setting">
+    <label>SELECT AI MODEL</label>
+    <select id="model">
+      <option value="openai/gpt-oss-20b">GPT-OSS 20B</option>
+      <option value="openai/gpt-oss-120b">GPT-OSS 120B</option>
+    </select>
+  </div>
+
+  <div class="setting">
+    <label>AI TEMPERATURE</label>
+    <input id="temperature" type="range"
+      min="0" max="1.5" step="0.1" value="0.7">
+    <div class="small" id="tempValue">0.7</div>
+  </div>
+
+  <div style="margin-top:auto">
+    <div class="small">
+      CatBot AI v1.0<br>
+      Powered by Groq API<br>
+      Made for GitHub Pages
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <header class="topbar">
+    <strong>CatBot AI</strong>
+    <span class="modeltag" id="currentModel">GPT-OSS 20B</span>
+  </header>
+
+  <section class="messages" id="messages">
+    <div class="welcome" id="welcome">
+      <h1>👋 Hello! I'm CatBot AI</h1>
+      <p>Your intelligent AI assistant. Ask me anything!</p>
+      <div class="suggestions">
+        <button data-prompt="Explain artificial intelligence simply">
+          Explain AI
+        </button>
+        <button data-prompt="Write a Python program for beginners">
+          Python Coding
+        </button>
+        <button data-prompt="Give me a creative project idea">
+          Project Ideas
+        </button>
+        <button data-prompt="Explain machine learning in Hindi">
+          Learn in Hindi
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <div class="typing hidden" id="typing">
+    CatBot is thinking...
+  </div>
+
+  <footer class="composer">
+    <div class="inputbox">
+      <textarea id="prompt"
+        placeholder="Message CatBot AI..."
+        rows="1"></textarea>
+      <button class="send" id="sendBtn">Send ➤</button>
+    </div>
+    <div class="footer">
+      AI can make mistakes. Verify important information.
+      <br>
+      <button id="clearChat"
+        style="background:none;border:0;color:#9eadd0;margin-top:8px">
+        Clear conversation
+      </button>
+    </div>
+  </footer>
+</main>
+</div>
+
+<script>
+const API_URL =
+  "https://api.groq.com/openai/v1/chat/completions";
+
+const models = {
+  gpt: [
+    ["openai/gpt-oss-20b", "GPT-OSS 20B"],
+    ["openai/gpt-oss-120b", "GPT-OSS 120B"]
+  ],
+  llama: [
+    ["llama-3.3-70b-versatile", "Llama 3.3 70B"],
+    ["llama-3.1-8b-instant", "Llama 3.1 8B"]
+  ]
+};
+
+const $ = id => document.getElementById(id);
+
+let conversation = [];
+let apiKey = ""; // Memory only. Never saved.
+
+function updateModels() {
+  const family = $("family").value;
+  $("model").innerHTML = "";
+
+  models[family].forEach(([id, name]) => {
+    const option = document.createElement("option");
+    option.value = id;
+    option.textContent = name;
+    $("model").appendChild(option);
+  });
+
+  updateCurrentModel();
+}
+
+function updateCurrentModel() {
+  const id = $("model").value;
+  const all = [...models.gpt, ...models.llama];
+  const found = all.find(item => item[0] === id);
+  $("currentModel").textContent = found ? found[1] : id;
+}
+
+$("family").addEventListener("change", updateModels);
+$("model").addEventListener("change", updateCurrentModel);
+
+$("temperature").addEventListener("input", () => {
+  $("tempValue").textContent = $("temperature").value;
+});
+
+$("apiKey").addEventListener("input", () => {
+  apiKey = $("apiKey").value.trim();
+  $("keyStatus").innerHTML = apiKey
+    ? '<span class="dot" style="background:#22c55e"></span> Key entered'
+    : '<span class="dot"></span> API key not entered';
+});
+
+$("toggleKey").addEventListener("click", () => {
+  const input = $("apiKey");
+  const visible = input.type === "password";
+  input.type = visible ? "text" : "password";
+  $("toggleKey").textContent = visible ? "Hide" : "Show";
+});
+
+function addMessage(role, text) {
+  $("welcome").classList.add("hidden");
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "msg " + role;
+
+  const avatar = document.createElement("div");
+  avatar.className = "avatar";
+  avatar.textContent = role === "user" ? "👤" : "🤖";
+
+  const body = document.createElement("div");
+  body.className = "msgbody";
+
+  // Safe plain-text rendering; no raw HTML from AI is executed.
+  body.textContent = text;
+
+  if (role === "assistant") {
+    const copy = document.createElement("button");
+    copy.className = "copy";
+    copy.textContent = "Copy response";
+    copy.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(text);
+        copy.textContent = "Copied!";
+      } catch {
+        copy.textContent = "Copy unavailable";
+      }
+    };
+    body.appendChild(copy);
+  }
+
+  wrapper.append(avatar, body);
+  $("messages").appendChild(wrapper);
+  $("messages").scrollTop = $("messages").scrollHeight;
+}
+
+function resetChat() {
+  conversation = [];
+  $("messages").innerHTML = `
+    <div class="welcome" id="welcome">
+      <h1>👋 Hello! I'm CatBot AI</h1>
+      <p>Your intelligent AI assistant. Ask me anything!</p>
+      <div class="suggestions">
+        <button data-prompt="Explain artificial intelligence simply">Explain AI</button>
+        <button data-prompt="Write a Python program for beginners">Python Coding</button>
+        <button data-prompt="Give me a creative project idea">Project Ideas</button>
+        <button data-prompt="Explain machine learning in Hindi">Learn in Hindi</button>
+      </div>
+    </div>`;
+}
+
+async function sendMessage() {
+  const text = $("prompt").value.trim();
+
+  if (!text) return;
+
+  if (!apiKey) {
+    alert("Please enter your Groq API key first.");
+    $("apiKey").focus();
+    return;
+  }
+
+  if (!apiKey.startsWith("gsk_")) {
+    alert("Please check your Groq API key.");
+    return;
+  }
+
+  const model = $("model").value;
+
+  $("prompt").value = "";
+  $("prompt").disabled = true;
+  $("sendBtn").disabled = true;
+  $("typing").classList.remove("hidden");
+
+  addMessage("user", text);
+  conversation.push({ role: "user", content: text });
+
+  try {
+    const response = await fetch(API_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + apiKey
+      },
+      body: JSON.stringify({
+        model: model,
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are CatBot AI, a helpful, friendly and intelligent assistant. " +
+              "Answer accurately and clearly. Support Hindi, Hinglish and English. " +
+              "Explain code step by step when requested."
+          },
+          ...conversation
+        ],
+        temperature: Number($("temperature").value),
+        max_completion_tokens: 2048
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error?.message || "API request failed: " + response.status
+      );
+    }
+
+    const answer =
+      data.choices?.[0]?.message?.content;
+
+    if (!answer) throw new Error("Empty response received.");
+
+    conversation.push({
+      role: "assistant",
+      content: answer
+    });
+
+    addMessage("assistant", answer);
+
+  } catch (error) {
+    conversation.pop();
+    addMessage(
+      "assistant",
+      "Error: " + error.message +
+      "\n\nPlease check your API key, model and Groq API access."
+    );
+  } finally {
+    $("typing").classList.add("hidden");
+    $("prompt").disabled = false;
+    $("sendBtn").disabled = false;
+    $("prompt").focus();
+  }
+}
+
+$("sendBtn").addEventListener("click", sendMessage);
+
+$("prompt").addEventListener("keydown", event => {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    sendMessage();
+  }
+});
+
+$("newChat").addEventListener("click", resetChat);
+$("clearChat").addEventListener("click", resetChat);
+
+// Suggestion buttons (event delegation)
+$("messages").addEventListener("click", event => {
+  const button = event.target.closest("[data-prompt]");
+  if (!button) return;
+  $("prompt").value = button.dataset.prompt;
+  $("prompt").focus();
+});
+
+updateModels();
+</script>
+</body>
+</html>
